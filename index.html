@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b1224">
+<meta name="format-detection" content="telephone=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ponchumoy 3D">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<title>Ponchumoy Ponchumaniano 3D - Edición Final</title>
+<style>
+  :root{--bg:#0b1224;--hud:#eaf3ff;--gold:#ffd05b;--cyan:#37dcff;--red:#ff5c72;--green:#5ff0a2}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--hud);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+  #hud{position:fixed;inset:0 0 auto 0;display:flex;justify-content:space-between;align-items:flex-start;padding:12px 16px;pointer-events:none;z-index:10}
+  .panel{background:rgba(10,16,32,.72);border:1px solid #395082;border-radius:12px;padding:10px 12px;backdrop-filter:blur(6px)}
+  .title{font-weight:900;letter-spacing:.04em;color:var(--gold);text-transform:uppercase}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .chip{font-weight:800;font-size:.9rem}
+  .chip b{color:var(--gold)}
+  #overlay{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(#071126c8,#071126e6);z-index:20}
+  .card{max-width:1200px;width:min(96vw,1200px);background:rgba(13,20,38,.94);border:1px solid #5672a8;border-radius:16px;padding:16px;box-shadow:0 20px 60px #0009}
+  .card h2{margin:0 0 8px;color:var(--cyan)}
+  .card p{margin:6px 0;line-height:1.4}
+  .grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px}
+  .box{background:rgba(10,16,32,.6);border:1px solid #456090;border-radius:12px;padding:10px}
+  .box h3{margin:0 0 8px;color:var(--gold);font-size:1rem}
+  select,button{appearance:none;border:1px solid #5c77b0;border-radius:10px;background:#17233d;color:var(--hud);cursor:pointer;padding:9px 10px;font:inherit;font-weight:700;transition:.15s transform,.15s background}
+  select{width:100%}
+  select:hover,select:focus,button:hover,button:focus{background:#263b64;transform:translateY(-1px);outline:none}
+  .primary{width:100%;margin-top:8px;padding:12px;border-color:#e4b742;background:#8b6013;color:#fff3c8;font-size:1.05rem}
+  .primary:hover{background:#ad7b18}
+  .note{color:#a9bddf;font-size:.82rem;margin-top:8px}
+  #canvasWrap{position:fixed;inset:0}
+  canvas{display:block;width:100%;height:100%}
+  .legend{font-size:.8rem;opacity:.85}
+  .standings{display:grid;grid-template-columns:28px 1fr 60px 60px;gap:6px;align-items:center;font-size:.9rem;margin-top:6px}
+  .standings .hdr{font-weight:800;color:var(--gold);border-bottom:1px solid #456090;padding-bottom:4px}
+  .standings .pos{font-weight:900;color:#9fb}
+  .btnSmall{padding:6px 8px;font-size:.85rem}
+  .hidden{display:none!important}
+  .loading{position:fixed;inset:0;display:grid;place-items:center;background:rgba(7,17,38,.9);z-index:30;color:#eaf3ff;font-size:1.1rem;font-weight:800;text-align:center;padding:20px}
+  .controls{position:fixed;bottom:12px;left:12px;display:flex;gap:8px;z-index:15}
+  .ctrlBtn{background:rgba(10,16,32,.8);border:1px solid #456090;color:#eaf3ff;border-radius:10px;padding:9px 11px;font-weight:800;cursor:pointer;backdrop-filter:blur(6px)}
+  .ctrlBtn:hover{background:#263b64}
+  .tabs{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+  .tab{padding:8px 12px;border:1px solid #456090;border-radius:10px;background:#17233d;color:#eaf3ff;cursor:pointer;font-weight:800}
+  .tab.active{background:#8b6013;border-color:#e4b742;color:#fff3c8}
+  .garageGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:8px;max-height:320px;overflow-y:auto}
+  .garageItem{background:rgba(10,16,32,.5);border:1px solid #3a4f7a;border-radius:10px;padding:8px;cursor:pointer;transition:.15s transform}
+  .garageItem:hover{transform:translateY(-2px);background:#1a2744}
+  .garageItem.selected{border-color:#ffd05b;background:#3a2f10}
+  .garageItem .name{font-weight:800;font-size:.9rem;margin-bottom:4px}
+  .garageItem .stat{font-size:.8rem;opacity:.85}
+  .garageInfo{margin-top:10px;font-size:.9rem}
+  .trackList{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;margin-top:8px;max-height:360px;overflow-y:auto}
+  .trackItem{background:rgba(10,16,32,.4);border:1px solid #3a4f7a;border-radius:8px;padding:6px;cursor:pointer;font-size:.85rem}
+  .trackItem:hover{background:#1a2744}
+  .trackItem .tname{font-weight:700;margin-bottom:3px}
+  .trackItem .tsurf{font-size:.8rem;opacity:.85}
+  .achievementsGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:8px;max-height:400px;overflow-y:auto}
+  .achItem{background:rgba(10,16,32,.4);border:1px solid #3a4f7a;border-radius:8px;padding:8px;font-size:.85rem}
+  .achItem.unlocked{border-color:#5ff0a2;background:rgba(95,240,162,.1)}
+  .achItem .aname{font-weight:700;margin-bottom:4px}
+  .achItem .adesc{font-size:.8rem;opacity:.85}
+  html,body{width:100%;height:100%;height:100dvh;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+  canvas{touch-action:none}
+  .card{max-height:calc(100dvh - max(24px,env(safe-area-inset-top)) - max(24px,env(safe-area-inset-bottom)));overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+  select,button,.tab,.garageItem,.trackItem{min-height:44px}
+  .controls{bottom:calc(12px + env(safe-area-inset-bottom));left:calc(12px + env(safe-area-inset-left))}
+  #hud{padding-top:calc(12px + env(safe-area-inset-top));padding-left:calc(16px + env(safe-area-inset-left));padding-right:calc(16px + env(safe-area-inset-right))}
+  .driveControls{position:fixed;inset:auto 0 calc(10px + env(safe-area-inset-bottom)) 0;display:flex;justify-content:space-between;align-items:flex-end;padding:0 calc(18px + env(safe-area-inset-right)) 0 calc(18px + env(safe-area-inset-left));pointer-events:none;z-index:18}
+  .driveGroup{display:flex;gap:12px;align-items:flex-end;pointer-events:auto}
+  .driveBtn{width:88px;height:88px;border-radius:24px;padding:0;display:grid;place-items:center;background:rgba(8,14,29,.78);border:2px solid rgba(148,178,238,.65);box-shadow:0 8px 30px #0008;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-size:1.8rem;font-weight:900;touch-action:none;-webkit-tap-highlight-color:transparent}
+  .driveBtn.pedal{height:104px;width:92px;border-radius:26px;font-size:1rem;line-height:1.1}
+  .driveBtn.accel{border-color:#5ff0a2;color:#bfffdc}
+  .driveBtn.brake{border-color:#ff6f82;color:#ffd5dc}
+  .driveBtn.active,.driveBtn:active{transform:scale(.94);background:rgba(48,70,116,.92);box-shadow:inset 0 0 0 3px rgba(255,255,255,.12)}
+  .raceHud{position:fixed;top:calc(82px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:16;width:min(520px,70vw);pointer-events:none;text-align:center}
+  .raceHud .panel{padding:8px 12px}
+  .raceLine{display:flex;justify-content:center;gap:14px;align-items:center;flex-wrap:wrap;font-size:.86rem;font-weight:800}
+  .progressTrack{height:7px;margin-top:7px;border-radius:999px;background:#17233d;overflow:hidden;border:1px solid #456090}
+  .progressFill{height:100%;width:0;background:linear-gradient(90deg,#37dcff,#5ff0a2);transition:width .08s linear}
+  #rotateNotice{display:none;position:fixed;inset:0;z-index:80;background:#071126;place-items:center;text-align:center;padding:32px;color:#eaf3ff}
+  #rotateNotice .rotateCard{max-width:420px;padding:24px;border:1px solid #5672a8;border-radius:18px;background:#10182b}
+  #rotateNotice .rotateIcon{font-size:3rem;margin-bottom:12px}
+  #rotateNotice strong{display:block;color:#ffd05b;font-size:1.35rem;margin-bottom:8px}
+  .ipadHint{display:none;color:#a9bddf;font-size:.8rem;margin-top:8px}
+  @media (hover:none) and (pointer:coarse){.ipadHint{display:block}.ctrlBtn:hover,.driveBtn:hover,button:hover,select:hover,.garageItem:hover,.trackItem:hover{transform:none}}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}.card{width:min(97vw,760px)}.driveBtn{width:78px;height:78px}.driveBtn.pedal{width:84px;height:94px}.raceHud{top:calc(72px + env(safe-area-inset-top));width:min(500px,68vw)}}
+  @media(max-height:600px){#hud .panel{padding:7px 9px}.title{font-size:.92rem}.chip{font-size:.78rem}.raceHud{top:calc(62px + env(safe-area-inset-top))}.driveBtn{width:72px;height:72px;border-radius:20px}.driveBtn.pedal{width:78px;height:82px}.controls{bottom:calc(6px + env(safe-area-inset-bottom))}.card{padding:12px}}
+  @media(orientation:portrait) and (max-width:1024px) and (pointer:coarse){#rotateNotice{display:grid}}
+</style>
+</head>
+<body>
+<div id="canvasWrap"><canvas id="c"></canvas></div>
+<div id="loading" class="loading hidden">Cargando juego completo...</div>
+
+<div id="rotateNotice" aria-live="polite">
+  <div class="rotateCard">
+    <div class="rotateIcon">↻</div>
+    <strong>Gira el iPad</strong>
+    <div>Ponchumoy 3D está optimizado para jugar en horizontal.</div>
+  </div>
+</div>
+
+<div id="raceHud" class="raceHud hidden" aria-live="polite">
+  <div class="panel">
+    <div class="raceLine">
+      <span id="raceHudName">Carrera</span>
+      <span>Vel. <b id="raceSpeed">0</b></span>
+      <span>Progreso <b id="raceProgressText">0%</b></span>
+    </div>
+    <div class="progressTrack"><div class="progressFill" id="raceProgressFill"></div></div>
+  </div>
+</div>
+
+<div id="driveControls" class="driveControls hidden" aria-label="Controles de conducción">
+  <div class="driveGroup">
+    <button class="driveBtn" id="touchLeft" aria-label="Girar a la izquierda">◀</button>
+    <button class="driveBtn" id="touchRight" aria-label="Girar a la derecha">▶</button>
+  </div>
+  <div class="driveGroup">
+    <button class="driveBtn pedal brake" id="touchBrake" aria-label="Frenar">FRENO</button>
+    <button class="driveBtn pedal accel" id="touchAccel" aria-label="Acelerar">ACELERA</button>
+  </div>
+</div>
+
+<div class="controls" id="utilityControls">
+  <button class="ctrlBtn" id="soundBtn">Sonido: ON</button>
+  <button class="ctrlBtn" id="animBtn">Anim: ON</button>
+  <button class="ctrlBtn" id="resetBtn">Reset</button>
+</div>
+
+<div id="hud">
+  <div class="panel">
+    <div class="title">Ponchumoy 3D</div>
+    <div style="font-size:.85rem;opacity:.85;margin-top:4px">Edición Final</div>
+  </div>
+  <div class="panel row">
+    <div class="chip">Pistas <b id="statTracks">100</b></div>
+    <div class="chip">Carreras <b id="statRaces">0</b></div>
+    <div class="chip">Victorias <b id="statWins">0</b></div>
+    <div class="chip">Logros <b id="statAchieve">0</b></div>
+  </div>
+</div>
+
+<div id="overlay">
+  <div class="card" id="mainMenu">
+    <h2>Garaje Ponchumano - Edición Final</h2>
+    <p>100 pistas · 3 campeonatos · Récords · Logros</p>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="garage">Garaje</div>
+      <div class="tab" data-tab="tracks">Pistas</div>
+      <div class="tab" data-tab="champ">Campeonatos</div>
+      <div class="tab" data-tab="achievements">Logros</div>
+      <div class="tab" data-tab="stats">Estadísticas</div>
+    </div>
+
+    <div id="tab-garage">
+      <div class="grid">
+        <div class="box">
+          <h3>Tus vehículos</h3>
+          <div class="garageGrid" id="garageGrid"></div>
+          <div class="garageInfo" id="garageInfo">Selecciona un vehículo.</div>
+        </div>
+        <div class="box">
+          <h3>Piloto</h3>
+          <select id="driverSelect"></select>
+          <div id="driverStats" class="legend" style="margin-top:6px"></div>
+        </div>
+        <div class="box">
+          <h3>Acciones</h3>
+          <button class="primary" id="raceQuickBtn">Carrera rápida</button>
+          <button class="primary" id="champBtn" style="margin-top:6px">Campeonatos</button>
+          <div class="ipadHint">En iPad: juega en horizontal y usa los controles táctiles.</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-tracks" class="hidden">
+      <div class="box">
+        <h3>100 Pistas</h3>
+        <div class="trackList" id="trackList"></div>
+        <div class="legend" style="margin-top:8px" id="trackCount"></div>
+      </div>
+    </div>
+
+    <div id="tab-champ" class="hidden">
+      <div class="grid">
+        <div class="box">
+          <h3>Campeonato</h3>
+          <select id="champSelect"></select>
+          <div id="champInfo" class="legend" style="margin-top:6px"></div>
+        </div>
+        <div class="box">
+          <h3>Vehículo</h3>
+          <select id="vehicleSelect"></select>
+          <div id="vehicleStats" class="legend" style="margin-top:6px"></div>
+        </div>
+        <div class="box">
+          <h3>Progreso</h3>
+          <div id="champProgress" class="legend">Sin datos.</div>
+        </div>
+      </div>
+      <button class="primary" id="startChampBtn" style="margin-top:8px">Iniciar campeonato</button>
+    </div>
+
+    <div id="tab-achievements" class="hidden">
+      <div class="box">
+        <h3>Tus Logros</h3>
+        <div class="achievementsGrid" id="achievementsGrid"></div>
+      </div>
+    </div>
+
+    <div id="tab-stats" class="hidden">
+      <div class="box">
+        <h3>Resumen</h3>
+        <div class="legend" id="statsText"></div>
+      </div>
+      <div class="box" style="margin-top:8px">
+        <h3>Récords por pista</h3>
+        <div class="legend" id="recordsText"></div>
+      </div>
+    </div>
+
+    <p class="note" style="margin-top:10px">Vehículos y pilotos ficticios inspirados en categorías reales.</p>
+  </div>
+
+  <div class="card hidden" id="preRaceMenu">
+    <h2 id="raceTitle">Carrera X</h2>
+    <p id="raceInfo">Pista: - · Clima: - · Vueltas: -</p>
+    <div class="box">
+      <h3>Rivales (IA)</h3>
+      <div class="row" style="align-items:center">
+        <span style="font-size:.9rem">Número de rivales:</span>
+        <select id="rivalsSelect" style="width:auto">
+          <option value="4" selected>4</option>
+          <option value="6">6</option>
+          <option value="8">8</option>
+        </select>
+      </div>
+    </div>
+    <button class="primary" id="startRaceBtn">Comenzar carrera</button>
+    <button class="btnSmall" id="backToGarageBtn" style="margin-top:8px">Volver</button>
+  </div>
+
+  <div class="card hidden" id="raceResultsMenu">
+    <h2>Resultados</h2>
+    <p id="raceResultText">Posición: - · Puntos: -</p>
+    <div id="raceResultsTable" class="standings"></div>
+    <button class="primary" id="nextRaceBtn">Continuar</button>
+  </div>
+
+  <div class="card hidden" id="champEndMenu">
+    <h2>Campeonato finalizado</h2>
+    <p id="champEndText">Puntos totales: - · Posición final: -</p>
+    <div id="finalStandings" class="standings"></div>
+    <button class="primary" id="newChampBtn">Volver al garaje</button>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+
+// --- DATOS INTEGRADOS ---
+const VEHICLES = [
+  {id:'car_hyper_001',name:'Fulgor X9',vg:89,type:'car',acceleration:96,grip:93,maxSpeed:1.12,color:0x32d8ff,category:'hypercar'},
+  {id:'car_gt_001',name:'Tormenta GT',vg:77,type:'car',acceleration:84,grip:87,maxSpeed:0.96,color:0xff5c72,category:'gt'},
+  {id:'bike_sport_001',name:'Rayo 1000',vg:82,type:'bike',acceleration:90,grip:84,maxSpeed:1.00,color:0xffd05b,category:'superbike'}
+];
+
+const DRIVERS = [
+  {id:'driver_001',name:'Alex Tormenta',country:'ES',speed:88,consistency:91,rain:94},
+  {id:'driver_002',name:'Marco Veloz',country:'IT',speed:94,consistency:88,rain:85},
+  {id:'driver_003',name:'Yuki Storm',country:'JP',speed:92,consistency:86,rain:88}
+];
+
+const TRACKS = [];
+for(let i=1;i<=100;i++){
+  const surfaces=[['asphalt','Asfalto',0x303642,92,98],['dirt','Tierra',0x4a3b32,70,82],['snow','Nieve',0xcfd8e3,55,70],['mixed','Mixto',0x5a4f3f,75,88]];
+  const [skey,sname,color,gmin,gmax]=surfaces[i%surfaces.length];
+  TRACKS.push({id:`track_${i.toString().padStart(3,'0')}`,name:`Pista ${i}`,surface:skey,surface_name:sname,base_grip:Math.floor(Math.random()*(gmax-gmin+1))+gmin,color:`#${color.toString(16).padStart(6,'0')}`});
+}
+
+const CONDITIONS = [
+  {id:'cond_dry_001',name:'Seco',weather:'dry',grip_mult:1.0,fog_density:0.002},
+  {id:'cond_rain_001',name:'Lluvia',weather:'rain',grip_mult:0.82,fog_density:0.006},
+  {id:'cond_snow_001',name:'Nieve',weather:'snow',grip_mult:0.70,fog_density:0.008}
+];
+
+const CHAMPS = [
+  {id:'champ_rookie_001',name:'Campeonato Rookie',difficulty:'easy',min_vg:50,max_vg:75,races:[{id:'r1',name:'GP Aurora',track_id:'track_001',condition_id:'cond_dry_001',laps:3},{id:'r2',name:'Ruta Forestal',track_id:'track_002',condition_id:'cond_dry_001',laps:3},{id:'r3',name:'Clasico Seco',track_id:'track_003',condition_id:'cond_dry_001',laps:4}],points_positions:[25,18,15,12,10,8,6,4,2,1],unlock_vehicle_on_win:'car_gt_001'},
+  {id:'champ_pro_001',name:'Campeonato Pro',difficulty:'medium',min_vg:70,max_vg:88,races:[{id:'r4',name:'Noche Lluviosa',track_id:'track_004',condition_id:'cond_rain_001',laps:4},{id:'r5',name:'Tierra y Barro',track_id:'track_005',condition_id:'cond_rain_001',laps:4},{id:'r6',name:'Nieve Total',track_id:'track_006',condition_id:'cond_snow_001',laps:3},{id:'r7',name:'Sprint Final',track_id:'track_007',condition_id:'cond_dry_001',laps:5}],points_positions:[25,18,15,12,10,8,6,4,2,1],unlock_vehicle_on_win:'car_supercar_001'},
+  {id:'champ_elite_001',name:'Campeonato Elite',difficulty:'hard',min_vg:85,max_vg:95,races:[{id:'r8',name:'GP Velox',track_id:'track_008',condition_id:'cond_dry_001',laps:5},{id:'r9',name:'Rally Extremo',track_id:'track_009',condition_id:'cond_rain_001',laps:5},{id:'r10',name:'Infierno Blanco',track_id:'track_010',condition_id:'cond_snow_001',laps:4},{id:'r11',name:'Lluvia Nocturna',track_id:'track_011',condition_id:'cond_rain_001',laps:6},{id:'r12',name:'Gran Final',track_id:'track_012',condition_id:'cond_dry_001',laps:7}],points_positions:[25,18,15,12,10,8,6,4,2,1],unlock_vehicle_on_win:'car_f1_001'}
+];
+
+const ACHIEVEMENTS = [
+  {id:'ach_first_race',name:'Primera Carrera',desc:'Completa tu primera carrera',check:(s)=>s.player.total_races>=1},
+  {id:'ach_first_win',name:'Primera Victoria',desc:'Gana tu primera carrera',check:(s)=>s.player.total_wins>=1},
+  {id:'ach_10_races',name:'Experimentado',desc:'Completa 10 carreras',check:(s)=>s.player.total_races>=10},
+  {id:'ach_10_wins',name:'Campeador',desc:'Gana 10 carreras',check:(s)=>s.player.total_wins>=10},
+  {id:'ach_50_races',name:'Veterano',desc:'Completa 50 carreras',check:(s)=>s.player.total_races>=50},
+  {id:'ach_all_champs',name:'Leyenda',desc:'Gana todos los campeonatos',check:(s)=>CHAMPS.every(c=>s.championships_progress?.[c.id]?.completed===true)},
+  {id:'ach_10_tracks',name:'Explorador',desc:'Corre en 10 pistas diferentes',check:(s)=>(s.tracks_played||[]).length>=10},
+  {id:'ach_50_tracks',name:'Conquistador',desc:'Corre en 50 pistas diferentes',check:(s)=>(s.tracks_played||[]).length>=50}
+];
+
+// --- GUARDADO ---
+const SAVE_KEY='ponchumoy_final_v1';
+let saveData={version:1,player:{name:'Jugador',total_races:0,total_wins:0,total_podiums:0,total_points:0},unlocked_vehicles:['car_hyper_001','car_gt_001','bike_sport_001'],unlocked_drivers:['driver_001','driver_002','driver_003'],championships_progress:{},records:{},settings:{sound_enabled:true,anim_enabled:true,selected_vehicle:'car_hyper_001',selected_driver:'driver_001'},tracks_played:[],achievements:[]};
+
+function loadSave(){try{const s=localStorage.getItem(SAVE_KEY);if(s)saveData=JSON.parse(s);}catch(e){console.warn('Fallo save:',e);}updateHUD();}
+function saveGame(){localStorage.setItem(SAVE_KEY,JSON.stringify(saveData));updateHUD();}
+
+// --- UI ---
+const overlay=document.getElementById('overlay'),mainMenu=document.getElementById('mainMenu'),preRaceMenu=document.getElementById('preRaceMenu'),raceResultsMenu=document.getElementById('raceResultsMenu'),champEndMenu=document.getElementById('champEndMenu'),loading=document.getElementById('loading');
+const soundBtn=document.getElementById('soundBtn'),animBtn=document.getElementById('animBtn'),resetBtn=document.getElementById('resetBtn');
+const tabs=[...document.querySelectorAll('.tab')],tabGarage=document.getElementById('tab-garage'),tabTracks=document.getElementById('tab-tracks'),tabChamp=document.getElementById('tab-champ'),tabAchieve=document.getElementById('tab-achievements'),tabStats=document.getElementById('tab-stats');
+const garageGrid=document.getElementById('garageGrid'),garageInfo=document.getElementById('garageInfo'),driverSelect=document.getElementById('driverSelect'),driverStats=document.getElementById('driverStats'),raceQuickBtn=document.getElementById('raceQuickBtn'),champBtn=document.getElementById('champBtn');
+const champSelect=document.getElementById('champSelect'),vehicleSelect=document.getElementById('vehicleSelect'),champInfo=document.getElementById('champInfo'),vehicleStats=document.getElementById('vehicleStats'),champProgress=document.getElementById('champProgress');
+const startChampBtn=document.getElementById('startChampBtn'),startRaceBtn=document.getElementById('startRaceBtn'),backToGarageBtn=document.getElementById('backToGarageBtn'),nextRaceBtn=document.getElementById('nextRaceBtn'),newChampBtn=document.getElementById('newChampBtn');
+const statTracks=document.getElementById('statTracks'),statRaces=document.getElementById('statRaces'),statWins=document.getElementById('statWins'),statAchieve=document.getElementById('statAchieve');
+const statsText=document.getElementById('statsText'),recordsText=document.getElementById('recordsText'),trackList=document.getElementById('trackList'),trackCount=document.getElementById('trackCount'),achievementsGrid=document.getElementById('achievementsGrid');
+const utilityControls=document.getElementById('utilityControls'),driveControls=document.getElementById('driveControls'),raceHud=document.getElementById('raceHud'),raceHudName=document.getElementById('raceHudName'),raceSpeed=document.getElementById('raceSpeed'),raceProgressText=document.getElementById('raceProgressText'),raceProgressFill=document.getElementById('raceProgressFill');
+
+// --- AUDIO ---
+let audioCtx=null,skidBuffer=null,soundEnabled=true,animEnabled=true;
+async function initAudio(){if(!soundEnabled)return;if(!audioCtx){audioCtx=new(window.AudioContext||window.webkitAudioContext)();const duration=0.6,rate=audioCtx.sampleRate,buf=audioCtx.createBuffer(1,rate*duration,rate),d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);skidBuffer=buf;}if(audioCtx.state==='suspended'){try{await audioCtx.resume();}catch(e){console.warn('Audio pendiente de gesto:',e);}}}
+let engineNode=null;
+function createEngineSound(){if(!audioCtx||!soundEnabled)return null;const osc=audioCtx.createOscillator();osc.type='sawtooth';osc.frequency.value=120;const gain=audioCtx.createGain();gain.gain.value=0.3;osc.connect(gain);gain.connect(audioCtx.destination);osc.start();return{osc,gain};}
+function updateEngineSound(node,speed){if(!node||!audioCtx)return;const base=80,max=340,t=Math.max(0,Math.min(1,Math.abs(speed)/1.2));node.osc.frequency.setTargetAtTime(base+(max-base)*t,audioCtx.currentTime,0.05);}
+function stopEngineSound(node){if(node){node.osc.stop();node.osc.disconnect();}}
+function playSkid(intensity){if(!audioCtx||!skidBuffer||!soundEnabled)return;const src=audioCtx.createBufferSource();src.buffer=skidBuffer;const gain=audioCtx.createGain();gain.gain.value=0.25*intensity;src.connect(gain);gain.connect(audioCtx.destination);src.start();}
+function playUi(type){if(!audioCtx||!soundEnabled)return;const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.type='sine';if(type==='click'){osc.frequency.value=520;gain.gain.value=0.08;}else if(type==='start'){osc.frequency.value=380;gain.gain.value=0.12;}else if(type==='finish'){osc.frequency.value=680;gain.gain.value=0.12;}osc.connect(gain);gain.connect(audioCtx.destination);osc.start();osc.stop(audioCtx.currentTime+0.12);}
+
+soundBtn.addEventListener('click',async()=>{saveData.settings.sound_enabled=!saveData.settings.sound_enabled;soundEnabled=saveData.settings.sound_enabled;soundBtn.textContent=`Sonido: ${soundEnabled?'ON':'OFF'}`;if(soundEnabled)await initAudio();saveGame();});
+animBtn.addEventListener('click',()=>{saveData.settings.anim_enabled=!saveData.settings.anim_enabled;animEnabled=saveData.settings.anim_enabled;animBtn.textContent=`Anim: ${animEnabled?'ON':'OFF'}`;saveGame();});
+resetBtn.addEventListener('click',()=>{if(confirm('Borrar todo el progreso?')){localStorage.removeItem(SAVE_KEY);location.reload();}});
+
+// --- THREE.JS ---
+const canvas=document.getElementById('c'),renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+const isTouchApple=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);const maxDpr=isTouchApple?1.6:2;renderer.setPixelRatio(Math.min(devicePixelRatio,maxDpr));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x0b1224);scene.fog=new THREE.Fog(0x0b1224,20,80);
+const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.1,200);camera.position.set(8,3,0);
+const hemi=new THREE.HemisphereLight(0xeef8ff,0x102040,0.9);scene.add(hemi);
+const dir=new THREE.DirectionalLight(0xffffff,0.9);dir.position.set(5,8,3);dir.castShadow=true;scene.add(dir);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(20,20),new THREE.MeshStandardMaterial({color:0x1b2a4a}));ground.rotation.x=-Math.PI/2;ground.position.y=-0.5;ground.receiveShadow=true;scene.add(ground);
+
+let garageMesh=null,cameraAngle=0;
+function showGarageVehicle(vid){const v=VEHICLES.find(x=>x.id===vid);if(garageMesh)scene.remove(garageMesh);const geo=new THREE.BoxGeometry(2.2,1.2,4.6),mat=new THREE.MeshStandardMaterial({color:v.color});garageMesh=new THREE.Mesh(geo,mat);garageMesh.position.set(0,0.5,0);garageMesh.castShadow=true;scene.add(garageMesh);garageInfo.innerHTML=`<b>${v.name}</b><br>VG: ${v.vg} · Aceleración: ${v.acceleration} · Agarre: ${v.grip}<br>Categoría: ${v.category}`;}
+
+// --- UI FUNCTIONS ---
+function updateHUD(){statTracks.textContent=TRACKS.length;statRaces.textContent=saveData.player.total_races;statWins.textContent=saveData.player.total_wins;const unlockedAch=ACHIEVEMENTS.filter(a=>a.check(saveData)).length;statAchieve.textContent=unlockedAch+'/'+ACHIEVEMENTS.length;}
+
+function populateGarage(){garageGrid.innerHTML='';saveData.unlocked_vehicles.forEach(vid=>{const v=VEHICLES.find(x=>x.id===vid);if(!v)return;const item=document.createElement('div');item.className='garageItem'+(vid===saveData.settings.selected_vehicle?' selected':'');item.innerHTML=`<div class="name">${v.name}</div><div class="stat">VG ${v.vg} · ${v.type.toUpperCase()}</div>`;item.addEventListener('click',()=>{if(soundEnabled)playUi('click');saveData.settings.selected_vehicle=vid;saveGame();populateGarage();showGarageVehicle(vid);});garageGrid.appendChild(item);});showGarageVehicle(saveData.settings.selected_vehicle);}
+
+function populateDrivers(){driverSelect.innerHTML='';DRIVERS.forEach((d,i)=>{const opt=document.createElement('option');opt.value=i;opt.textContent=`${d.name} (${d.country})`;driverSelect.appendChild(opt);});driverSelect.value=DRIVERS.findIndex(d=>d.id===saveData.settings.selected_driver);updateDriverStats();}
+function updateDriverStats(){const d=DRIVERS[Number(driverSelect.value)];if(!d)return;driverStats.innerHTML=`Velocidad <b>${d.speed}</b> · Consistencia <b>${d.consistency}</b> · Lluvia <b>${d.rain}</b>`;}
+driverSelect.addEventListener('change',()=>{saveData.settings.selected_driver=DRIVERS[Number(driverSelect.value)].id;saveGame();updateDriverStats();});
+
+tabs.forEach(tab=>{tab.addEventListener('click',()=>{if(soundEnabled)playUi('click');tabs.forEach(t=>t.classList.remove('active'));tab.classList.add('active');const t=tab.dataset.tab;tabGarage.classList.toggle('hidden',t!=='garage');tabTracks.classList.toggle('hidden',t!=='tracks');tabChamp.classList.toggle('hidden',t!=='champ');tabAchieve.classList.toggle('hidden',t!=='achievements');tabStats.classList.toggle('hidden',t!=='stats');if(t==='tracks')populateTracks();if(t==='achievements')populateAchievements();if(t==='stats')updateStats();});});
+
+function populateTracks(){trackList.innerHTML='';TRACKS.forEach(t=>{const item=document.createElement('div');item.className='trackItem';item.innerHTML=`<div class="tname">${t.name}</div><div class="tsurf">${t.surface_name} · Agarre: ${t.base_grip}</div>`;item.addEventListener('click',()=>{if(soundEnabled)playUi('click');alert(`${t.name}\nSuperficie: ${t.surface_name}\nAgarre base: ${t.base_grip}`);});trackList.appendChild(item);});trackCount.textContent=`Total: ${TRACKS.length} pistas · Asfalto: ${TRACKS.filter(t=>t.surface==='asphalt').length} · Tierra: ${TRACKS.filter(t=>t.surface==='dirt').length} · Nieve: ${TRACKS.filter(t=>t.surface==='snow').length} · Mixto: ${TRACKS.filter(t=>t.surface==='mixed').length}`;}
+
+function populateAchievements(){achievementsGrid.innerHTML='';ACHIEVEMENTS.forEach(a=>{const unlocked=a.check(saveData);const item=document.createElement('div');item.className='achItem'+(unlocked?' unlocked':'');item.innerHTML=`<div class="aname">${unlocked?'✓':'○'} ${a.name}</div><div class="adesc">${a.desc}</div>`;achievementsGrid.appendChild(item);});}
+
+function updateStats(){const p=saveData.player;statsText.innerHTML=`Carreras: <b>${p.total_races}</b> · Victorias: <b>${p.total_wins}</b> · Podios: <b>${p.total_podiums}</b> · Puntos: <b>${p.total_points}</b>`;const recs=saveData.records||{};const topTracks=Object.entries(recs).sort((a,b)=>b[1].best_pos-a[1].best_pos).slice(0,5);recordsText.innerHTML=topTracks.length?`Mejores pistas:<br>${topTracks.map(([tid,r])=>`${TRACKS.find(t=>t.id===tid)?.name||tid}: Pos ${r.best_pos}`).join('<br>')}`:'Sin récords aún.';}
+
+function populateChampSelect(){champSelect.innerHTML='';CHAMPS.forEach((c,i)=>{const opt=document.createElement('option');opt.value=i;opt.textContent=c.name;champSelect.appendChild(opt);});updateChampInfo();}
+function updateChampInfo(){const c=CHAMPS[Number(champSelect.value)];champInfo.textContent=`Dificultad: ${c.difficulty} · VG: ${c.min_vg}ⷯ${c.max_vg} · Carreras: ${c.races.length}`;updateVehicleSelect();}
+function updateVehicleSelect(){const c=CHAMPS[Number(champSelect.value)];vehicleSelect.innerHTML='';VEHICLES.forEach((v,i)=>{const locked=!saveData.unlocked_vehicles.includes(v.id)||v.vg<c.min_vg||v.vg>c.max_vg;const opt=document.createElement('option');opt.value=i;opt.textContent=`${v.name} (VG ${v.vg})${locked?' [BLOQUEADO]':''}`;opt.disabled=locked;vehicleSelect.appendChild(opt);});const sv=VEHICLES.findIndex(v=>v.id===saveData.settings.selected_vehicle);if(sv>=0)vehicleSelect.value=sv;updateVehicleStats();}
+function updateVehicleStats(){const v=VEHICLES[Number(vehicleSelect.value)];if(!v)return;vehicleStats.innerHTML=`VG <b>${v.vg}</b> · Aceleración <b>${v.acceleration}</b> · Agarre <b>${v.grip}</b>`;}
+champSelect.addEventListener('change',updateChampInfo);vehicleSelect.addEventListener('change',updateVehicleStats);
+
+// --- CAMPEONATO ---
+let currentChamp=null,currentRaceIdx=0,playerPoints=0,driverStandings=[],raceResults=null,raceVehicleIndex=0;
+function openChampionshipTab(){tabs.forEach(t=>t.classList.toggle('active',t.dataset.tab==='champ'));tabGarage.classList.add('hidden');tabTracks.classList.add('hidden');tabAchieve.classList.add('hidden');tabStats.classList.add('hidden');tabChamp.classList.remove('hidden');updateChampInfo();}
+champBtn.addEventListener('click',()=>{if(soundEnabled)playUi('click');openChampionshipTab();});
+raceQuickBtn.addEventListener('click',async()=>{await initAudio();const track=TRACKS[Math.floor(Math.random()*TRACKS.length)],cond=CONDITIONS[Math.floor(Math.random()*CONDITIONS.length)];currentChamp={id:'quick',name:'Carrera rápida',isQuick:true,races:[{id:'quick_1',name:'Carrera rápida',track_id:track.id,condition_id:cond.id,laps:3}],points_positions:[25,18,15,12,10,8,6,4,2,1]};currentRaceIdx=0;playerPoints=0;driverStandings=[];raceVehicleIndex=Math.max(0,VEHICLES.findIndex(v=>v.id===saveData.settings.selected_vehicle));mainMenu.classList.add('hidden');showPreRace();if(soundEnabled)playUi('start');});
+startChampBtn.addEventListener('click',async()=>{await initAudio();currentChamp=CHAMPS[Number(champSelect.value)];currentRaceIdx=0;playerPoints=0;driverStandings=[];raceVehicleIndex=Number(vehicleSelect.value);mainMenu.classList.add('hidden');showPreRace();if(soundEnabled)playUi('start');});
+function showPreRace(){const race=currentChamp.races[currentRaceIdx];const t=TRACKS.find(x=>x.id===race.track_id),cond=CONDITIONS.find(x=>x.id===race.condition_id);raceTitle.textContent=`Carrera ${currentRaceIdx+1}: ${race.name}`;raceInfo.textContent=`Pista: ${t.name} (${t.surface_name}) · Clima: ${cond.name} · Vueltas: ${race.laps}`;mainMenu.classList.add('hidden');preRaceMenu.classList.remove('hidden');}
+backToGarageBtn.addEventListener('click',()=>{preRaceMenu.classList.add('hidden');mainMenu.classList.remove('hidden');utilityControls.classList.remove('hidden');});
+startRaceBtn.addEventListener('click',async()=>{await initAudio();preRaceMenu.classList.add('hidden');overlay.style.display='none';startRace();if(soundEnabled)playUi('start');});
+
+function showRaceResults(results){
+  running=false;driveControls.classList.add('hidden');raceHud.classList.add('hidden');utilityControls.classList.remove('hidden');
+  overlay.style.display='grid';preRaceMenu.classList.add('hidden');raceResultsMenu.classList.remove('hidden');
+  const race=currentChamp.races[currentRaceIdx],pos=results.playerPos,pts=currentChamp.points_positions[pos-1]||0;playerPoints+=pts;
+  raceResultText.textContent=`Posición: ${pos}ª · Puntos: ${pts} · Total: ${playerPoints}`;
+  const playerDriver=DRIVERS[Number(driverSelect.value)].name;let found=driverStandings.find(x=>x.name===playerDriver);if(!found){found={name:playerDriver,points:0};driverStandings.push(found);}found.points+=pts;
+  raceResultsTable.innerHTML='';['Pos','Piloto','Pts',''].forEach(h=>{const d=document.createElement('div');d.className='hdr';d.textContent=h;raceResultsTable.appendChild(d);});
+  driverStandings.sort((a,b)=>b.points-a.points);driverStandings.forEach((d,i)=>{const posEl=document.createElement('div');posEl.className='pos';posEl.textContent=i+1;const nameEl=document.createElement('div');nameEl.textContent=d.name;const ptsEl=document.createElement('div');ptsEl.textContent=d.points;const btnEl=document.createElement('div');if(i===0&&currentRaceIdx===currentChamp.races.length-1&&!currentChamp.isQuick){btnEl.innerHTML='<button class="btnSmall">Campeón</button>';}raceResultsTable.appendChild(posEl);raceResultsTable.appendChild(nameEl);raceResultsTable.appendChild(ptsEl);raceResultsTable.appendChild(btnEl);});
+  nextRaceBtn.textContent=currentChamp.isQuick?'Volver al garaje':(currentRaceIdx>=currentChamp.races.length-1?'Finalizar campeonato':'Siguiente carrera');
+  if(soundEnabled)playUi('finish');saveData.player.total_races++;if(pos===1)saveData.player.total_wins++;if(pos<=3)saveData.player.total_podiums++;saveData.player.total_points+=pts;if(!saveData.tracks_played.includes(race.track_id))saveData.tracks_played.push(race.track_id);if(!saveData.records[race.track_id]||pos<saveData.records[race.track_id].best_pos)saveData.records[race.track_id]={best_pos:pos};saveGame();updateHUD();
+}
+
+nextRaceBtn.addEventListener('click',()=>{if(currentChamp?.isQuick){raceResultsMenu.classList.add('hidden');mainMenu.classList.remove('hidden');populateGarage();return;}if(currentRaceIdx>=currentChamp.races.length-1){raceResultsMenu.classList.add('hidden');champEndMenu.classList.remove('hidden');showChampEnd();}else{currentRaceIdx++;raceResultsMenu.classList.add('hidden');showPreRace();}});
+newChampBtn.addEventListener('click',()=>{champEndMenu.classList.add('hidden');mainMenu.classList.remove('hidden');utilityControls.classList.remove('hidden');populateGarage();});
+
+function showChampEnd(){
+  const playerDriver=DRIVERS[Number(driverSelect.value)].name;driverStandings.sort((a,b)=>b.points-a.points);const finalPos=driverStandings.findIndex(x=>x.name===playerDriver)+1;
+  champEndText.textContent=`Puntos totales: ${playerPoints} · Posición: ${finalPos}ª`;finalStandings.innerHTML='';
+  ['Pos','Piloto','Pts',''].forEach(h=>{const d=document.createElement('div');d.className='hdr';d.textContent=h;finalStandings.appendChild(d);});
+  driverStandings.forEach((d,i)=>{const posEl=document.createElement('div');posEl.className='pos';posEl.textContent=i+1;const nameEl=document.createElement('div');nameEl.textContent=d.name;const ptsEl=document.createElement('div');ptsEl.textContent=d.points;const btnEl=document.createElement('div');if(i===0)btnEl.innerHTML='<button class="btnSmall">🏆 Campeón</button>';finalStandings.appendChild(posEl);finalStandings.appendChild(nameEl);finalStandings.appendChild(ptsEl);finalStandings.appendChild(btnEl);});
+  if(currentChamp?.id&&currentChamp.id!=='quick'){saveData.championships_progress[currentChamp.id]={completed:finalPos===1,points:playerPoints};saveGame();}
+}
+
+// --- CARRERA ---
+let playerMesh=null,playerV=null,rivals=[],obstacles=[],playerEngine=null;const obstacleGeo=new THREE.BoxGeometry(3,2,2),obstacleMat=new THREE.MeshStandardMaterial({color:0x8b6013});
+let running=false,distance=0,level=1,speed=0,steer=0,playerX=0,clock=new THREE.Clock(),obstacleTimer=0;
+const keys={w:false,a:false,s:false,d:false,ArrowUp:false,ArrowDown:false,ArrowLeft:false,ArrowRight:false};
+
+function releaseControls(){Object.keys(keys).forEach(k=>keys[k]=false);document.querySelectorAll('.driveBtn.active').forEach(b=>b.classList.remove('active'));}
+function bindHoldButton(id,key){const el=document.getElementById(id);const on=e=>{keys[key]=true;el.classList.add('active');e.preventDefault();try{el.setPointerCapture(e.pointerId);}catch(_){};};const off=e=>{keys[key]=false;el.classList.remove('active');if(e)e.preventDefault();};el.addEventListener('pointerdown',on,{passive:false});el.addEventListener('pointerup',off,{passive:false});el.addEventListener('pointercancel',off,{passive:false});el.addEventListener('lostpointercapture',off,{passive:false});}
+bindHoldButton('touchLeft','ArrowLeft');bindHoldButton('touchRight','ArrowRight');bindHoldButton('touchAccel','ArrowUp');bindHoldButton('touchBrake','ArrowDown');
+window.addEventListener('blur',releaseControls);document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseControls();});
+document.addEventListener('contextmenu',e=>{if(e.target.closest('.driveBtn')||e.target===canvas)e.preventDefault();});
+
+function startRace(){
+  const race=currentChamp.races[currentRaceIdx],t=TRACKS.find(x=>x.id===race.track_id),c=CONDITIONS.find(x=>x.id===race.condition_id),vData=VEHICLES[raceVehicleIndex]||VEHICLES[0];
+  distance=0;level=1;speed=0;steer=0;playerX=0;obstacleTimer=0;releaseControls();
+  if(garageMesh)scene.remove(garageMesh);garageMesh=null;if(playerMesh)scene.remove(playerMesh);rivals.forEach(r=>scene.remove(r.mesh));rivals=[];obstacles.forEach(o=>scene.remove(o));obstacles=[];if(playerEngine)stopEngineSound(playerEngine);playerEngine=null;
+  scene.fog=new THREE.FogExp2(0x0b1224,c.fog_density);playerV=vData;playerMesh=new THREE.Mesh(new THREE.BoxGeometry(2.2,1.2,4.6),new THREE.MeshStandardMaterial({color:vData.color}));playerMesh.position.set(0,1,0);playerMesh.castShadow=true;scene.add(playerMesh);if(soundEnabled)playerEngine=createEngineSound();
+  const numRivals=Number(document.getElementById('rivalsSelect').value);for(let i=0;i<numRivals;i++){const v=VEHICLES[Math.floor(Math.random()*VEHICLES.length)],m=new THREE.Mesh(new THREE.BoxGeometry(2.2,1.2,4.6),new THREE.MeshStandardMaterial({color:v.color}));m.position.set((Math.random()*10-5),1,-40-i*25);m.castShadow=true;scene.add(m);rivals.push({mesh:m,x:m.position.x,z:m.position.z,baseSpeed:0.7+Math.random()*0.25,aggression:0.6+Math.random()*0.35,laneOffset:(Math.random()*12-6)});}
+  raceHudName.textContent=`${t.name} · ${c.name}`;raceSpeed.textContent='0';raceProgressText.textContent='0%';raceProgressFill.style.width='0%';utilityControls.classList.add('hidden');driveControls.classList.remove('hidden');raceHud.classList.remove('hidden');running=true;raceResults=null;
+}
+
+window.addEventListener('keydown',e=>{if(keys.hasOwnProperty(e.key)){keys[e.key]=true;if(running)e.preventDefault();}},{passive:false});
+window.addEventListener('keyup',e=>{if(keys.hasOwnProperty(e.key))keys[e.key]=false;});
+
+function update(dt){
+  const race=currentChamp.races[currentRaceIdx],t=TRACKS.find(x=>x.id===race.track_id),c=CONDITIONS.find(x=>x.id===race.condition_id),gripFactor=(t.base_grip*c.grip_mult*0.9)/100,v=playerV;
+  const targetSpeed=(keys.w||keys.ArrowUp)?v.maxSpeed:(keys.s||keys.ArrowDown)?-0.35:0;speed+=(targetSpeed-speed)*0.075*dt*60;
+  const turn=((keys.d||keys.ArrowRight)?1:0)-((keys.a||keys.ArrowLeft)?1:0);steer+=(turn-steer)*0.1*dt*60;playerX+=steer*(10+Math.max(0,speed)*4)*gripFactor*dt;playerX=Math.max(-16,Math.min(16,playerX));playerMesh.position.x=playerX;
+  const speedNorm=Math.max(0,Math.min(1.1,speed/Math.max(v.maxSpeed,0.01))),base=18*v.maxSpeed*gripFactor,move=Math.max(1.6,base*(0.12+0.88*speedNorm)+level*0.25);distance+=move*dt*0.12;level=1+Math.floor(distance/500);
+  const targetDist=race.laps*1200,progress=Math.min(1,distance/targetDist);raceSpeed.textContent=Math.max(0,Math.round(speedNorm*320));raceProgressText.textContent=`${Math.round(progress*100)}%`;raceProgressFill.style.width=`${progress*100}%`;
+  if(distance>=targetDist&&!raceResults){const rivalDists=rivals.map(r=>r.z-playerMesh.position.z);let pos=1;rivalDists.forEach(rd=>{if(rd>40)pos++;});raceResults={playerPos:pos};running=false;if(playerEngine)stopEngineSound(playerEngine);showRaceResults(raceResults);return;}
+  obstacleTimer+=dt;const spawnRate=Math.max(0.45,1.2-level*0.025);if(obstacleTimer>spawnRate){const o=new THREE.Mesh(obstacleGeo,obstacleMat);o.position.set((Math.random()*26-13),1,-120-Math.random()*60);o.castShadow=true;o.receiveShadow=true;scene.add(o);obstacles.push(o);obstacleTimer=0;}
+  for(let i=obstacles.length-1;i>=0;i--){const o=obstacles[i];o.position.z+=move*dt;const dx=Math.abs(o.position.x-playerX),dz=Math.abs(o.position.z-playerMesh.position.z);if(dx<2.6&&dz<3.2){raceResults={playerPos:12};running=false;if(playerEngine)stopEngineSound(playerEngine);showRaceResults(raceResults);return;}if(o.position.z>20){scene.remove(o);obstacles.splice(i,1);}}
+  for(const [idx,r] of rivals.entries()){const targetX=playerX+r.laneOffset,targetZ=playerMesh.position.z-8-idx*4,dx=targetX-r.x,dz=targetZ-r.z,desiredAngle=Math.atan2(dx,dz),maxSteer=0.04*r.aggression*gripFactor,steerFactor=Math.max(-maxSteer,Math.min(maxSteer,desiredAngle*0.6));r.x+=steerFactor*20*dt;r.x=Math.max(-16,Math.min(16,r.x));const rivalSpeed=r.baseSpeed+(level*0.02)*(0.7+0.3*r.aggression)*gripFactor;r.z+=rivalSpeed*20*dt;r.mesh.position.x=r.x;r.mesh.position.z=r.z;const ddx=Math.abs(r.x-playerX),ddz=Math.abs(r.z-playerMesh.position.z);if(ddx<2.4&&ddz<3.0){raceResults={playerPos:12};running=false;if(playerEngine)stopEngineSound(playerEngine);showRaceResults(raceResults);return;}}
+  if(soundEnabled&&playerEngine)updateEngineSound(playerEngine,speed);const slip=Math.abs(steer)*Math.abs(speed);if(slip>0.28&&Math.random()<0.12)playSkid(Math.min(1,slip));camera.position.x=playerX*0.6;camera.position.z=playerMesh.position.z-10;camera.position.y=6+Math.max(0,Math.abs(speed))*2;camera.lookAt(playerMesh.position.x,1,playerMesh.position.z+6);
+}
+
+function render(){const dt=Math.min(clock.getDelta(),0.05);if(!running&&garageMesh){cameraAngle+=0.003;camera.position.x=Math.sin(cameraAngle)*8;camera.position.z=Math.cos(cameraAngle)*8;camera.position.y=3;camera.lookAt(0,0.5,0);}if(running)update(dt);renderer.render(scene,camera);requestAnimationFrame(render);}
+
+addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();});
+
+// --- INIT ---
+loadSave();soundEnabled=saveData.settings?.sound_enabled!==false;animEnabled=saveData.settings?.anim_enabled!==false;soundBtn.textContent=`Sonido: ${soundEnabled?'ON':'OFF'}`;animBtn.textContent=`Anim: ${animEnabled?'ON':'OFF'}`;populateGarage();populateDrivers();populateChampSelect();loading.classList.add('hidden');render();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(err=>console.warn('Service worker:',err)));}
+</script>
+</body>
+</html>
