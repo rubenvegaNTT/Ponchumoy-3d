@@ -1,4 +1,7 @@
-# Ponchumoy 3D - versión iPad
+# Ponchumoy 3D para iPad — v2
+
+Versión mejorada con cámara chase orientada hacia la carretera, obstáculos visibles con antelación, aviso de peligro y modelos 3D reconocibles de coches y moto.
+
 
 Versión adaptada del HTML original para jugar desde Safari o como app web en iPad.
 
