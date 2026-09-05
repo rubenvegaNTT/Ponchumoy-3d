@@ -1,7 +1,7 @@
 {
   "name": "Ponchumoy Ponchumaniano 3D",
   "short_name": "Ponchumoy 3D",
-  "description": "Juego 3D de carreras Ponchumoy optimizado para iPad.",
+  "description": "Juego 3D arcade de carreras Ponchumoy para iPad, con turbo y controles táctiles.",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

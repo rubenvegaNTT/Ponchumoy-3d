@@ -1,4 +1,4 @@
-const CACHE = 'ponchumoy-3d-ipad-v2';
+const CACHE = 'ponchumoy-3d-ipad-v3';
 const LOCAL_ASSETS = [
   './',
   './index.html',
