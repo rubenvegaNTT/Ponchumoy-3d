@@ -1,13 +1,13 @@
 {
-  "name": "Ponchumoy Ponchumaniano 3D",
-  "short_name": "Ponchumoy 3D",
-  "description": "Juego 3D arcade de carreras Ponchumoy para iPad, con turbo y controles táctiles.",
+  "name": "Ponchumoy Ponchumaniano — Arcade 3D V3",
+  "short_name": "Ponchumoy V3",
+  "description": "Juego 3D arcade de carreras optimizado para iPad con circuitos cerrados, turbo, clima, campeonatos y multijugador local.",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",
   "orientation": "landscape",
-  "background_color": "#0b1224",
-  "theme_color": "#0b1224",
+  "background_color": "#020713",
+  "theme_color": "#06101f",
   "icons": [
     {"src":"./icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
     {"src":"./icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
